@@ -7,7 +7,10 @@ uniform float iTimeDelta;
 uniform float iFrameRate;
 uniform int iFrame;
 uniform vec4 iMouse;
+uniform vec4 iMousePrev;
 uniform sampler2D iChannel0; // Previous Buffer A frame
+uniform float u_Boxes[5]; // center xy, size xy, rotation theta * boxes
+// change line 75 or somewhere in image to reflec thte size change 
 
 out vec4 fragColor;
 #define PI 3.14156
@@ -38,25 +41,47 @@ const bool addPhotoAndShotNoise = true;
 const float photoNoiseTargetBa = .1;
 const float photoNoiseCutoffHz = 10.;
 
+float sdRotatedRect(vec2 p, vec2 center, vec2 size, float angle, out vec2 uv) {
+    vec2 q = p - center;
 
-float sdRect(vec2 p, vec2 sz) {
-    vec2 d = abs(p) - sz;
-    // Distance outside the rectangle (0 for inside/edge components)
-    float outside = length(max(d, 0.0));
-    // Distance inside the rectangle (negative value)
-    float inside = min(max(d.x, d.y), 0.0);
-    return outside + inside;
+    float c = cos(angle);
+    float s = sin(angle);
+
+    q = mat2(c, -s, s, c) * q;
+
+    uv = q / size + 0.5;
+
+    vec2 d = abs(q) - size * 0.5;
+
+    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
+}
+   
+float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r )
+{
+    vec2 ba = b-a;
+    vec2 pa = p-a;
+    float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
+    return length(pa-h*ba)-r;
 }
 
 void image( out vec4 fragColor, in vec2 fragCoord,
     in vec3 iResolution)
 {
-    vec3 col = distance(iMouse.xy, fragCoord) < 30. ? vec3(1) : vec3(0);
+    vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : vec3(0);
     
-    col += sdRect(fragCoord - 
-    vec2(300. + sin(iTime * 2.) * 100.,100. 
-    + cos(iTime * 3.) * 50.), vec2(100,50))
-    < 0. ? 1. : 0.;
+    for (int i = 0; i < 1; i++) {
+        vec2 uv;
+        float rect = sdRotatedRect(
+            fragCoord,
+            vec2(u_Boxes[i * 5], u_Boxes[i * 5 + 1]),
+            vec2(u_Boxes[i * 5 + 2], u_Boxes[i * 5 + 3]),
+            u_Boxes[i * 5 + 4],
+            uv
+        );
+        float cscale = .03;
+        float checker = float(mod(floor(uv.x * u_Boxes[i * 5 + 2] * cscale) + floor(uv.y * u_Boxes[i * 5 + 3] * cscale), 2.) < 1.) + .2;
+        col += rect < 0. ? vec3(checker) : vec3(0);
+    }
     
     fragColor = vec4( col, 1.0 );
 }
@@ -230,7 +255,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     fragColor = state(col, cur, coord, iFrame, iFrame == 0);
     
-    //fragColor = col;
+    // fragColor = col;
 }
 
 void main() {

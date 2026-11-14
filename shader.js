@@ -4,6 +4,12 @@ async function loadShader(path) {
   return response.text();
 }
 
+function getboxes() {
+  if (window.boxdata == null) // return generic case?
+    return new Float32Array(Array(5).fill(0));    
+  return new Float32Array(window.boxdata.flat());
+}
+
 async function main() {
   const canvas = document.getElementById('canvas');
   if (!canvas) throw new Error('Canvas #canvas not found');
@@ -54,7 +60,9 @@ async function main() {
       frameRate: uniform('iFrameRate'),
       frame: uniform('iFrame'),
       mouse: uniform('iMouse'),
-      channel0: uniform('iChannel0')
+      mouseprev: uniform('iMousePrev'),
+      channel0: uniform('iChannel0'),
+      boxes: uniform('u_Boxes')
     };
   }
 
@@ -67,6 +75,8 @@ async function main() {
   ]), gl.STATIC_DRAW);
 
   const mouse = { x: 0, y: 0, downX: 0, downY: 0, pressed: false, clicked: false };
+  const mouseprev = { x: 0, y: 0, downX: 0, downY: 0, pressed: false, clicked: false };
+
   function pointerPosition(event) {
     const rect = canvas.getBoundingClientRect();
     mouse.x = (event.clientX - rect.left) * canvas.width / rect.width;
@@ -88,20 +98,20 @@ async function main() {
   canvas.addEventListener('pointerup', releasePointer);
   canvas.addEventListener('pointercancel', releasePointer);
 
-    const ext = gl.getExtension('EXT_color_buffer_float');
-    if (!ext) {
+  const ext = gl.getExtension('EXT_color_buffer_float');
+  if (!ext) {
     throw new Error('EXT_color_buffer_float not supported');
-    }
+  }
 
-    function createTarget(width, height) {
+  function createTarget(width, height) {
     const texture = gl.createTexture();
     gl.bindTexture(gl.TEXTURE_2D, texture);
 
     // 32-bit floats, including negative values
     gl.texImage2D(
-        gl.TEXTURE_2D, 0, gl.RGBA32F,
-        width, height, 0,
-        gl.RGBA, gl.FLOAT, null
+      gl.TEXTURE_2D, 0, gl.RGBA32F,
+      width, height, 0,
+      gl.RGBA, gl.FLOAT, null
     );
 
     // Nearest-neighbor sampling (no interpolation)
@@ -113,14 +123,14 @@ async function main() {
     const framebuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
     gl.framebufferTexture2D(
-        gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
-        gl.TEXTURE_2D, texture, 0
+      gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0,
+      gl.TEXTURE_2D, texture, 0
     );
 
     if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
-        gl.deleteFramebuffer(framebuffer);
-        gl.deleteTexture(texture);
-        throw new Error('Framebuffer incomplete');
+      gl.deleteFramebuffer(framebuffer);
+      gl.deleteTexture(texture);
+      throw new Error('Framebuffer incomplete');
     }
 
     gl.viewport(0, 0, width, height);
@@ -128,7 +138,7 @@ async function main() {
     gl.clear(gl.COLOR_BUFFER_BIT);
 
     return { texture, framebuffer };
-    }
+  }
 
   function destroyTarget(target) {
     gl.deleteFramebuffer(target.framebuffer);
@@ -175,6 +185,12 @@ async function main() {
     gl.uniform4f(pass.mouse, mouse.x, mouse.y,
       mouse.clicked ? (mouse.pressed ? mouse.downX : -mouse.downX) : 0,
       mouse.clicked ? (mouse.pressed ? mouse.downY : -mouse.downY) : 0);
+    gl.uniform4f(pass.mouseprev, mouseprev.x, mouseprev.y,
+      mouseprev.clicked ? (mouseprev.pressed ? mouseprev.downX : -mouseprev.downX) : 0,
+      mouseprev.clicked ? (mouseprev.pressed ? mouseprev.downY : -mouseprev.downY) : 0);
+    Object.assign(mouseprev, mouse);
+    gl.uniform1fv(pass.boxes, getboxes());
+
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, inputTexture);
     gl.uniform1i(pass.channel0, 0);
