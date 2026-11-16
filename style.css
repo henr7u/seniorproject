@@ -12,8 +12,47 @@ html, body {
 
 canvas {
   display: block;
+  position: absolute;
   width: 100vw;
   height: 100vh;
 
   cursor: none;
+}
+
+#bboxcontainer {
+  position: absolute;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+.bbox {
+  position: absolute;
+}
+.bbcorner {
+  position: absolute;
+  width: 30px; height: 30px; 
+  --offset: 3px;
+  --border-style: 2px solid;
+}
+.bbTL {
+  left: 0; top: 0;
+  transform: translate(calc(-1 * var(--offset)), calc(-1 * var(--offset)));
+  border-top: var(--border-style) var(--borcorcol); border-left: var(--border-style) var(--borcorcol);
+}
+.bbTR {
+  right: 0; top: 0;
+  transform: translate(var(--offset), calc(-1 * var(--offset)));
+  border-top: var(--border-style) var(--borcorcol); border-right: var(--border-style) var(--borcorcol);
+}
+.bbBL {
+  left: 0; bottom: 0;
+  transform: translate(calc(-1 * var(--offset)), var(--offset));
+  border-bottom: var(--border-style) var(--borcorcol); border-left: var(--border-style) var(--borcorcol);
+}
+.bbBR {
+  right: 0; bottom: 0;
+  transform: translate(var(--offset), var(--offset));
+  border-bottom: var(--border-style) var(--borcorcol); border-right: var(--border-style) var(--borcorcol);
+}
+.bbtitle {
 }
