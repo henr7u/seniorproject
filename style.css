@@ -19,40 +19,28 @@ canvas {
   cursor: none;
 }
 
-#bboxcontainer {
+#rectcontainer {
   position: absolute;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
 }
-.bbox {
+.rect {
   position: absolute;
+  --s: 30px; /* the size on the corner */
+  --t: 3px;  /* the thickness of the border */
+  --g: 20px; /* the gap between the border and image */
+  
+  padding: calc(var(--g) + var(--t));
+  outline: var(--t) solid var(--borcorcol); /* the color here */
+  outline-offset: calc(-1*var(--t));
+  mask:
+    conic-gradient(at var(--s) var(--s),#0000 75%,#000 0)
+     0 0/calc(100% - var(--s)) calc(100% - var(--s)),
+    conic-gradient(#000 0 0) content-box;
+  transition: all .4s;
+  transition-property: outline, outline-offset, mask;
 }
-.bbcorner {
-  position: absolute;
-  width: 30px; height: 30px; 
-  --offset: 3px;
-  --border-style: 2px solid;
-}
-.bbTL {
-  left: 0; top: 0;
-  transform: translate(calc(-1 * var(--offset)), calc(-1 * var(--offset)));
-  border-top: var(--border-style) var(--borcorcol); border-left: var(--border-style) var(--borcorcol);
-}
-.bbTR {
-  right: 0; top: 0;
-  transform: translate(var(--offset), calc(-1 * var(--offset)));
-  border-top: var(--border-style) var(--borcorcol); border-right: var(--border-style) var(--borcorcol);
-}
-.bbBL {
-  left: 0; bottom: 0;
-  transform: translate(calc(-1 * var(--offset)), var(--offset));
-  border-bottom: var(--border-style) var(--borcorcol); border-left: var(--border-style) var(--borcorcol);
-}
-.bbBR {
-  right: 0; bottom: 0;
-  transform: translate(var(--offset), var(--offset));
-  border-bottom: var(--border-style) var(--borcorcol); border-right: var(--border-style) var(--borcorcol);
-}
-.bbtitle {
+
+.recttitle {
 }

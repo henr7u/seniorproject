@@ -48,8 +48,8 @@ function releasePointer(event) {
 canvas.addEventListener('pointerup', releasePointer);
 canvas.addEventListener('pointercancel', releasePointer);
 
-const boxstates = Array(1).fill(0); // change the count depending on how many are added
-function box(index, p, size) {
+const rectstates = Array(1).fill(0); // change the count depending on how many are added
+function rect(index, p, size) {
     let center = [
         p[0] + 20 * perlin(t + 1234),
         p[1] + 20 * perlin(t - 1234)];
@@ -82,8 +82,8 @@ function box(index, p, size) {
     }
 
     let hovered = sdRotatedRect([mouse.x, mouse.y]) < 0;
-    let hovert = mix(boxstates[index], hovered * 1, .2);
-    boxstates[index] = hovert;
+    let hovert = mix(rectstates[index], hovered * 1, .2);
+    rectstates[index] = hovert;
 
     center = [
         mix(center[0], p[0], hovert),
@@ -102,14 +102,14 @@ function box(index, p, size) {
     ]
 }
 
-function update(timestamp) {
+function updaterects(timestamp) {
     t = timestamp * .001;
 
-    let boxes = [];
-    boxes.push(box(0, [200, 200], [300, 100]));
+    let rects = [];
+    rects.push(rect(0, [200, 200], [300, 100]));
 
-    window.boxdata = boxes;
-    requestAnimationFrame(update);
+    window.rectdata = rects;
+    requestAnimationFrame(updaterects);
 }
 
-requestAnimationFrame(update);
+requestAnimationFrame(updaterects);

@@ -9,7 +9,7 @@ uniform int iFrame;
 uniform vec4 iMouse;
 uniform vec4 iMousePrev;
 uniform sampler2D iChannel0; // Previous Buffer A frame
-uniform float u_Boxes[5]; // center xy, size xy, rotation theta * boxes
+uniform float u_Rects[5]; // center xy, size xy, rotation theta * rects
 // change line 75 or somewhere in image to reflec thte size change 
 
 out vec4 fragColor;
@@ -73,13 +73,13 @@ void image( out vec4 fragColor, in vec2 fragCoord,
         vec2 uv;
         float rect = sdRotatedRect(
             fragCoord,
-            vec2(u_Boxes[i * 5], u_Boxes[i * 5 + 1]),
-            vec2(u_Boxes[i * 5 + 2], u_Boxes[i * 5 + 3]),
-            u_Boxes[i * 5 + 4],
+            vec2(u_Rects[i * 5], u_Rects[i * 5 + 1]),
+            vec2(u_Rects[i * 5 + 2], u_Rects[i * 5 + 3]),
+            u_Rects[i * 5 + 4],
             uv
         );
         float cscale = .03;
-        float checker = float(mod(floor(uv.x * u_Boxes[i * 5 + 2] * cscale) + floor(uv.y * u_Boxes[i * 5 + 3] * cscale), 2.) < 1.) + .2;
+        float checker = float(mod(floor(uv.x * u_Rects[i * 5 + 2] * cscale) + floor(uv.y * u_Rects[i * 5 + 3] * cscale), 2.) < 1.) + .2;
         col += rect < 0. ? vec3(checker) : vec3(0);
     }
     
