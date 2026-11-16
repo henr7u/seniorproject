@@ -25,22 +25,35 @@ canvas {
   height: 100vh;
   pointer-events: none;
 }
+
 .rect {
   position: absolute;
-  --s: 30px; /* the size on the corner */
-  --t: 3px;  /* the thickness of the border */
-  --g: 20px; /* the gap between the border and image */
+  --corner: 30px;
+  --t: 3px;
+}
+
+.rect::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   
-  padding: calc(var(--g) + var(--t));
-  outline: var(--t) solid var(--borcorcol); /* the color here */
-  outline-offset: calc(-1*var(--t));
+  padding: var(--t);
+  outline: var(--t) solid var(--borcorcol);
+  outline-offset: calc(-1 * var(--t));
+
   mask:
-    conic-gradient(at var(--s) var(--s),#0000 75%,#000 0)
-     0 0/calc(100% - var(--s)) calc(100% - var(--s)),
-    conic-gradient(#000 0 0) content-box;
-  transition: all .4s;
-  transition-property: outline, outline-offset, mask;
+    conic-gradient(at var(--corner) var(--corner), #0000 75%, #000 0)
+    0 0 /
+    max(50%, calc(100% - var(--corner)))
+    max(50%, calc(100% - var(--corner))),
+    linear-gradient(#000 0 0) content-box;
 }
 
 .recttitle {
+  position: absolute;
+  top: 100%;
+  font-family: "Ubuntu Mono", monospace;
+  color: var(--borcorcol);
+  font-size: 20px;
 }

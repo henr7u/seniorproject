@@ -1,3 +1,22 @@
+var allrects = [
+    {
+        title: 'test',
+        desc: 'testing description',
+        pos: [300, 400],
+        size: [200, 100],
+        color: '#ffff00',
+        content: 'something?'
+    },
+    {
+        title: 'what is this?',
+        desc: 'testing description',
+        pos: [600, 400],
+        size: [200, 100],
+        color: '#00ff00',
+        content: 'something?'
+    }
+]
+
 function rotate(p, theta) {
     let s = Math.sin(theta);
     let c = Math.cos(theta);
@@ -21,7 +40,6 @@ function perlin(p) {
     return mix(a, b, smoothstep(f));
 }
 
-let t = 0;
 
 const canvas = document.getElementById('canvas');
 const mouse = { x: 0, y: 0, downX: 0, downY: 0, pressed: false, clicked: false };
@@ -48,8 +66,19 @@ function releasePointer(event) {
 canvas.addEventListener('pointerup', releasePointer);
 canvas.addEventListener('pointercancel', releasePointer);
 
-const rectstates = Array(1).fill(0); // change the count depending on how many are added
+function hashFloat(str) {
+  let hash = 2166136261;
+  for (let i = 0; i < str.length; i++) {
+    hash ^= str.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0) / 4294967296;
+}
+
+const rectstates = Array(allrects.length).fill(0); // change the count depending on how many are added
 function rect(index, p, size) {
+    let t = time + index * 1000; // could hash, too lazy. crude hack works
+
     let center = [
         p[0] + 20 * perlin(t + 1234),
         p[1] + 20 * perlin(t - 1234)];
@@ -96,17 +125,20 @@ function rect(index, p, size) {
     ];
 
     return [
+        index,
         center[0], center[1],
         size[0], size[1],
         angle
     ]
 }
 
+let time = 0;
 function updaterects(timestamp) {
-    t = timestamp * .001;
+    time = timestamp * .001;
 
     let rects = [];
-    rects.push(rect(0, [200, 200], [300, 100]));
+    for (let i = 0; i < allrects.length; i++)
+        rects.push(rect(i, allrects[i].pos, allrects[i].size))
 
     window.rectdata = rects;
     requestAnimationFrame(updaterects);

@@ -9,7 +9,7 @@ uniform int iFrame;
 uniform vec4 iMouse;
 uniform vec4 iMousePrev;
 uniform sampler2D iChannel0; // Previous Buffer A frame
-uniform float u_Rects[5]; // center xy, size xy, rotation theta * rects
+uniform float u_Rects[12]; // size xy, rotation theta * rects
 // change line 75 or somewhere in image to reflec thte size change 
 
 out vec4 fragColor;
@@ -64,22 +64,27 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r )
     return length(pa-h*ba)-r;
 }
 
+// rect info at a specific index
+float rinf(int i, int off) {
+    return u_Rects[i * 6 + off];
+}
+
 void image( out vec4 fragColor, in vec2 fragCoord,
     in vec3 iResolution)
 {
     vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : vec3(0);
     
-    for (int i = 0; i < 1; i++) {
+    for (int i = 0; i < int(u_Rects.length()); i++) {
         vec2 uv;
         float rect = sdRotatedRect(
             fragCoord,
-            vec2(u_Rects[i * 5], u_Rects[i * 5 + 1]),
-            vec2(u_Rects[i * 5 + 2], u_Rects[i * 5 + 3]),
-            u_Rects[i * 5 + 4],
+            vec2(rinf(i, 1), rinf(i, 2)),
+            vec2(rinf(i, 3), rinf(i, 4)),
+            rinf(i, 5),
             uv
         );
         float cscale = .03;
-        float checker = float(mod(floor(uv.x * u_Rects[i * 5 + 2] * cscale) + floor(uv.y * u_Rects[i * 5 + 3] * cscale), 2.) < 1.) + .2;
+        float checker = float(mod(floor(uv.x * rinf(i, 3) * cscale) + floor(uv.y * rinf(i, 4) * cscale), 2.) < 1.) + .2;
         col += rect < 0. ? vec3(checker) : vec3(0);
     }
     

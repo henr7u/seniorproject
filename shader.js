@@ -7,7 +7,7 @@ async function loadShader(path) {
 function getrects() {
   if (window.rectdata == null) {// return generic case?
     console.warn("no rect data found");
-    return new Float32Array(Array(5).fill(0));    
+    return new Float32Array(Array(6).fill(0));    
   }
   return new Float32Array(window.rectdata.flat());
 }
