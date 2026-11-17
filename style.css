@@ -29,7 +29,7 @@ canvas {
 .rect {
   position: absolute;
   --corner: 30px;
-  --t: 3px;
+  --t: 2px;
 }
 
 .rect::before {

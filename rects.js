@@ -38,12 +38,13 @@ function rect(index, p, size) {
 	let hovert = mix(cur.t, hovered * 1, .2);
 	let start = cur.start;
 	if (hovered != cur.is)
-		start = t;
+		start = time;
 
 	rectstates[index] = {
 		is: hovered,
 		t: hovert,
-		start: start // start of either hover or dehover
+		start: start, // start of either hover or dehover
+        corner: baselinecornerwidth
 	};
 
 	// update visual with hover data
