@@ -71,9 +71,25 @@ function arbitrarysmoothstep(x, sx, sy, sc, ex, ey, ec) {
 
 function sampleONanim(data, state, bounds, t) {
 	// anim config
-	const blinkstartT = .05;
+	const blinkstartT = .2;
 	const blinkdur = .07;
 	const blinkpause = .14;
+
+	const stepstart = .5;
+	const stepdur = .7;
+	const cin = 2;
+	const cout = 2;
+
+	if (t < stepstart) { // blink
+		if ((t > blinkstartT && t < blinkstartT + blinkdur) ||
+			(t > blinkstartT + blinkpause && t < blinkstartT + blinkdur + blinkpause))
+			return 0;
+		return baselinecornerwidth;
+	}
+
+	let full = Math.max(bounds.size[0], bounds.size[1]) / 2;
+
+	return mix(baselinecornerwidth, full, arbitrarysmoothstep(t, stepstart, 0, cin, stepstart + stepdur, 1, cout));
 
 	const introstart = .5;
 	// https://www.desmos.com/calculator/eiys5rhpk4
@@ -86,16 +102,8 @@ function sampleONanim(data, state, bounds, t) {
 	const startec = 1.4;
 	const snapsc = 1.5;
 	const snapec = 2.2;	
-	
-	if (t < introstart) { // blink
-		if ((t > blinkstartT && t < blinkstartT + blinkdur) ||
-			(t > blinkstartT + blinkpause && t < blinkstartT + blinkdur + blinkpause))
-			return 0;
-		return baselinecornerwidth;
-	}
 
 	// for some reason the size is doubled? im so confused
-	let full = Math.max(bounds.size[0], bounds.size[1]) / 4;
 	
 	// 3 piece piecewise
 	let per = 0;
@@ -121,7 +129,7 @@ function sampleONanim(data, state, bounds, t) {
 }
 
 function sampleOFFanim(data, state, t) {
-	return baselinecornerwidth;
+	return mix(state.corner, baselinecornerwidth, .13);
 }
 
 function updaterect(i, r, data, state) {
@@ -131,16 +139,15 @@ function updaterect(i, r, data, state) {
 	syncElement(canvas, r, bounds.leftbottom[0], bounds.leftbottom[1], bounds.size[0], bounds.size[1]);
 
 	let rt = time - state.start;
-	let corner = state.is ? sampleONanim(data, state, bounds, rt) : sampleOFFanim(data, state, bounds, rt);
+	let corner = state.is ? sampleONanim(data, state, bounds, rt) : sampleOFFanim(data, state, rt);
 	rectstates[i].corner = corner;
 	r.style.setProperty('--corner', corner + 'px');
+
 }
 
 function updatedrawer() {
-	state = rectstates;
-
 	for (let i = 0; i < rects.length; i++)
-		updaterect(i, rects[i], rectdata[i], state[i]);
+		updaterect(i, rects[i], rectdata[i], rectstates[i]);
 
 	requestAnimationFrame(updatedrawer);
 }

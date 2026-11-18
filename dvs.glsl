@@ -10,7 +10,9 @@ uniform vec4 iMouse;
 uniform vec4 iMousePrev;
 uniform sampler2D iChannel0; // Previous Buffer A frame
 uniform float u_Rects[12]; // size xy, rotation theta * rects
-// change line 75 or somewhere in image to reflec thte size change 
+
+
+// #define PREVIEW
 
 out vec4 fragColor;
 #define PI 3.14156
@@ -69,10 +71,23 @@ float rinf(int i, int off) {
     return u_Rects[i * 6 + off];
 }
 
+mat2 rot(float a) {
+    float c = cos(a), s = sin(a);
+    return mat2(c, -s, s, c);
+}
+
+float sdBox(vec3 p, vec3 b) {
+    vec3 q = abs(p) - b;
+    return length(max(q, 0.0))
+         + min(max(q.x, max(q.y, q.z)), 0.0);
+}
+
 void image( out vec4 fragColor, in vec2 fragCoord,
     in vec3 iResolution)
 {
-    vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : vec3(0);
+    vec3 bg = vec3(0);
+    // mouse cursor
+    vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : bg; 
     
     for (int i = 0; i < int(u_Rects.length()); i++) {
         vec2 uv;
@@ -87,9 +102,51 @@ void image( out vec4 fragColor, in vec2 fragCoord,
         float checker = float(mod(floor(uv.x * rinf(i, 3) * cscale) + floor(uv.y * rinf(i, 4) * cscale), 2.) < 1.) + .2;
         col += rect < 0. ? vec3(checker) : vec3(0);
     }
+
+    // basic ass cube edge ray march
+    vec2 uv = (2.0 * fragCoord - iResolution.xy)
+            / min(iResolution.x, iResolution.y);
+
+    vec3 ro = vec3(-2.0, 0.0, 6);
+    vec3 rd = normalize(vec3(uv, -2.5));
+
+    float t = 0.0;
+    bool hit = false;
+
+    vec3 pt = ro;
+    for (int i = 0; i < 100; i++) {
+        pt = ro + rd * t;
+        pt.xz = rot(iTime * 1.7 + .85) * pt.xz;
+        pt.yz = rot(iTime * 2.4 - 1.2) * pt.yz;
+
+        float d = sdBox(pt, vec3(0.65));
+
+        if (d < 0.0007) {
+            hit = true;
+            break;
+        }
+
+        t += max(d, 0.0005);
+        if (t > 12.0) break;
+    }
+
+    if (hit) {
+        vec3 d = abs(abs(pt) - vec3(.65));
+
+        float edge = min(
+            length(d.xy),
+            min(length(d.xz), length(d.yz))
+        );
+        float thickness = 0.04;
+
+        float line = 1.0 - step(thickness, edge);
+
+        col += vec3(line);
+    }
     
     fragColor = vec4( col, 1.0 );
 }
+
 
 // https://www.pcg-random.org/
 uvec4 pcg4d(inout uvec4 v)
@@ -260,7 +317,9 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     fragColor = state(col, cur, coord, iFrame, iFrame == 0);
     
-    // fragColor = col;
+#ifdef PREVIEW
+    fragColor = col;
+#endif
 }
 
 void main() {

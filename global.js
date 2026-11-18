@@ -20,12 +20,12 @@ const allrects = [
 	}
 ]
 
-const baselinecornerwidth = 10;
+const baselinecornerwidth = 15;
 
 var rectdata = [];
 // 
 
-const rectstates = Array(allrects.length).fill(
+var rectstates = Array(allrects.length).fill(
 	{ is: false, t: 0, start: -1, corner: baselinecornerwidth }
 ); // change the count depending on how many are added
 

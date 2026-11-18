@@ -13,6 +13,8 @@ uniform sampler2D iChannel0; // Current Buffer A output
 
 out vec4 fragColor;
 
+// #define PREVIEW
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     float num = texture(iChannel0, fragCoord/iResolution.xy).w;
@@ -20,8 +22,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     vec3 col = vec3(num,0,-num);
 	fragColor = vec4(col, 1.0);
-	// fragColor = vec4(orig, 1);
+    
+#ifdef PREVIEW
+	fragColor = vec4(orig, 1);
+#endif
 	// fragColor = vec4(orig + col, 1);
+
+    // if (iMouse.z > 0. && length(iMouse.xy - fragCoord) < 100.)
+    //     fragColor = vec4(orig.y);
 } 
 
 void main() {

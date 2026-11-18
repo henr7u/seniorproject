@@ -44,7 +44,7 @@ function rect(index, p, size) {
 		is: hovered,
 		t: hovert,
 		start: start, // start of either hover or dehover
-        corner: baselinecornerwidth
+        corner: cur.corner
 	};
 
 	// update visual with hover data

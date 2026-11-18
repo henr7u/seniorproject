@@ -30,6 +30,7 @@ canvas {
   position: absolute;
   --corner: 30px;
   --t: 2px;
+  overflow: visible;
 }
 
 .rect::before {
@@ -48,6 +49,7 @@ canvas {
     max(50%, calc(100% - var(--corner)))
     max(50%, calc(100% - var(--corner))),
     linear-gradient(#000 0 0) content-box;
+
 }
 
 .recttitle {
@@ -56,4 +58,6 @@ canvas {
   font-family: "Ubuntu Mono", monospace;
   color: var(--borcorcol);
   font-size: 20px;
+
+  width: 200%;
 }
