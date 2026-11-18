@@ -10,7 +10,7 @@ uniform vec4 iMouse;
 uniform vec4 iMousePrev;
 uniform sampler2D iChannel0; // Previous Buffer A frame
 uniform float u_Rects[12]; // size xy, rotation theta * rects
-
+uniform float u_Cube[3 + 3 + 1 + 1]; // pos + rot + size + perspective
 
 // #define PREVIEW
 
@@ -58,8 +58,7 @@ float sdRotatedRect(vec2 p, vec2 center, vec2 size, float angle, out vec2 uv) {
     return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
 }
    
-float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r )
-{
+float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r ) {
     vec2 ba = b-a;
     vec2 pa = p-a;
     float h = clamp( dot(pa,ba)/dot(ba,ba), 0.0, 1.0 );
@@ -83,13 +82,13 @@ float sdBox(vec3 p, vec3 b) {
 }
 
 void image( out vec4 fragColor, in vec2 fragCoord,
-    in vec3 iResolution)
-{
+    in vec3 iResolution) {
     vec3 bg = vec3(0);
     // mouse cursor
     vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : bg; 
     
-    for (int i = 0; i < int(u_Rects.length()); i++) {
+    // rectangles
+    for (int i = 0; i < u_Rects.length() / 6; i++) {
         vec2 uv;
         float rect = sdRotatedRect(
             fragCoord,
@@ -107,8 +106,8 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     vec2 uv = (2.0 * fragCoord - iResolution.xy)
             / min(iResolution.x, iResolution.y);
 
-    vec3 ro = vec3(-2.0, 0.0, 6);
-    vec3 rd = normalize(vec3(uv, -2.5));
+    vec3 ro = vec3(u_Cube[0], u_Cube[1], u_Cube[2]);
+    vec3 rd = normalize(vec3(uv, u_Cube[7]));
 
     float t = 0.0;
     bool hit = false;
@@ -116,10 +115,11 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     vec3 pt = ro;
     for (int i = 0; i < 100; i++) {
         pt = ro + rd * t;
-        pt.xz = rot(iTime * 1.7 + .85) * pt.xz;
-        pt.yz = rot(iTime * 2.4 - 1.2) * pt.yz;
+        pt.xz = rot(u_Cube[3]) * pt.xz;
+        pt.yz = rot(u_Cube[4]) * pt.yz;
+        pt.yz = rot(u_Cube[5]) * pt.yz;
 
-        float d = sdBox(pt, vec3(0.65));
+        float d = sdBox(pt, vec3(u_Cube[6]));
 
         if (d < 0.0007) {
             hit = true;
@@ -131,7 +131,7 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     }
 
     if (hit) {
-        vec3 d = abs(abs(pt) - vec3(.65));
+        vec3 d = abs(abs(pt) - vec3(u_Cube[6]));
 
         float edge = min(
             length(d.xy),
@@ -149,8 +149,7 @@ void image( out vec4 fragColor, in vec2 fragCoord,
 
 
 // https://www.pcg-random.org/
-uvec4 pcg4d(inout uvec4 v)
-{
+uvec4 pcg4d(inout uvec4 v) {
 	v = v * 1664525u + 1013904223u;
 	v.x += v.y * v.w;
 	v.y += v.z * v.x;
@@ -177,8 +176,7 @@ uvec4 coord2seed(uvec3 id) {
 		id.x * 1664525u + id.y * 1013904223u);
 }
 
-uvec4 seededcoord2seed(uvec3 id, int seed)
-{
+uvec4 seededcoord2seed(uvec3 id, int seed) {
 	uint useed = uint(seed);
 	return uvec4(
 		id.x ^ (useed * 0x9E3779B9u),
@@ -190,16 +188,14 @@ uvec4 seededcoord2seed(uvec3 id, int seed)
 
 // src: A Note on the Generation of Random Normal Deviates.
 // https://doi.org/10.1214/aoms/1177706645
-float boxMullerRandomNormal(inout uvec4 s)
-{
+float boxMullerRandomNormal(inout uvec4 s) {
 	float u1 = max(rand(s), 1e-7);
 	float u2 = rand(s);
 
 	return sqrt(-2.0f * log(u1)) * cos(2.0f * PI * u2);
 }
 
-vec4 VariableThreshAndLeak(uvec3 id)
-{
+vec4 VariableThreshAndLeak(uvec3 id) {
 	uvec4 seed = seededcoord2seed(id, runSeed);
 	
 	// variate thresholds by normal distribution
@@ -215,8 +211,7 @@ vec4 VariableThreshAndLeak(uvec3 id)
 	return vec4(pos, neg, noiseRate, 0); // extra float for something idk
 }
 
-float luma(vec3 col)
-{
+float luma(vec3 col) {
 	return dot(vec3(.2126, .7152, .0722), max(vec3(0.), col)); // no performance difference from og
 }
 
@@ -240,8 +235,7 @@ float ApproximateVoltage(float fps, float targetBA) {
     ;
 }
 
-float photoreceptorNoise(inout uvec4 seed, float curPhotoNoise)
-{
+float photoreceptorNoise(inout uvec4 seed, float curPhotoNoise) {
 	if (!addPhotoAndShotNoise)
 		return 0.;
         
@@ -306,8 +300,7 @@ vec4 state(vec4 col, vec4 state,
     return vec4(ref, Lf, photoNoise, packout);
 }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
-{
+void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 coord = floor(fragCoord / downscale) * downscale;
     
     vec4 col;

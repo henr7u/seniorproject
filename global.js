@@ -17,13 +17,21 @@ const allrects = [
 		size: [200, 100],
 		color: '#00ff00',
 		content: 'something?'
+	},
+	{ // the CUBE
+		title: 'Henry Yu\'s Senior Project Porfolio',
+		desc: 'testing description',
+		pos: [-2, 0, 6], // camera position
+		size: [.65, -2.5], // size of cube and then the perspective coef
+		color: '#ff0000',
+		content: 'something?'
 	}
 ]
 
 const baselinecornerwidth = 15;
 
 var rectdata = [];
-// 
+var cubedata = []; // position, rotation, size, perspective coef 
 
 var rectstates = Array(allrects.length).fill(
 	{ is: false, t: 0, start: -1, corner: baselinecornerwidth }

@@ -78,7 +78,7 @@ function sampleONanim(data, state, bounds, t) {
 	const stepstart = .5;
 	const stepdur = .7;
 	const cin = 2;
-	const cout = 2;
+	const cout = 1.4;
 
 	if (t < stepstart) { // blink
 		if ((t > blinkstartT && t < blinkstartT + blinkdur) ||
@@ -142,11 +142,10 @@ function updaterect(i, r, data, state) {
 	let corner = state.is ? sampleONanim(data, state, bounds, rt) : sampleOFFanim(data, state, rt);
 	rectstates[i].corner = corner;
 	r.style.setProperty('--corner', corner + 'px');
-
 }
 
 function updatedrawer() {
-	for (let i = 0; i < rects.length; i++)
+	for (let i = 0; i < rects.length - 1; i++)
 		updaterect(i, rects[i], rectdata[i], rectstates[i]);
 
 	requestAnimationFrame(updatedrawer);

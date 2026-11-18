@@ -11,6 +11,13 @@ function getrects() {
 	}
 	return new Float32Array(rectdata.flat());
 }
+function getcubedata() {
+	if (rectdata == null) {
+		console.error("no cube data found");
+		return new Float32Array(Array(8).fill(0));
+	}
+	return new Float32Array(cubedata.flat());
+}
 
 async function main() {
 	const canvas = document.getElementById('canvas');
@@ -64,7 +71,8 @@ async function main() {
 			mouse: uniform('iMouse'),
 			mouseprev: uniform('iMousePrev'),
 			channel0: uniform('iChannel0'),
-			rects: uniform('u_Rects')
+			rects: uniform('u_Rects'),
+			cube: uniform('u_Cube'),
 		};
 	}
 
@@ -192,6 +200,7 @@ async function main() {
 			mouseprev.clicked ? (mouseprev.pressed ? mouseprev.downY : -mouseprev.downY) : 0);
 		Object.assign(mouseprev, mouse);
 		gl.uniform1fv(pass.rects, getrects());
+		gl.uniform1fv(pass.cube, getcubedata());
 
 		gl.activeTexture(gl.TEXTURE0);
 		gl.bindTexture(gl.TEXTURE_2D, inputTexture);
