@@ -25,7 +25,7 @@ const allrects = [
 		desc: 'testing description',
 		pos: [-2, 0, 6], // camera position
 		size: [.65, -2.5], // size of cube and then the perspective coef
-		tcoef: .1,
+		tcoef: .05,
 		color: '#ff0000',
 		content: 'something?'
 	}

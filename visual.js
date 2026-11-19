@@ -1,6 +1,7 @@
 var rects = []
 
 const rectexpansion = 10;
+const smoothing = .05;
 
 const rectcontainer = document.getElementById('rectcontainer');
 function generaterect(data) {

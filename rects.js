@@ -72,6 +72,11 @@ function rect(index, p, size) {
 	]
 }
 
+function lerpAngle(a, b, t) {
+  const TAU = 2 * Math.PI;
+  const delta = ((b - a + Math.PI) % TAU + TAU) % TAU - Math.PI;
+  return ((a + delta * t) % TAU + TAU) % TAU;
+}
 
 function updatecube() {
 	let rot = [
@@ -80,15 +85,27 @@ function updatecube() {
 		time * .05 + .5
 	];
 
-	const TAU = 2 * Math.PI;
-	const mod = x => ((x % TAU) + TAU) % TAU;
-	rot = [mod(rot[0]), mod(rot[1]), mod(rot[2])];
+	let mousemotion = [
+		-mouse.y / canvas.height * 3.,
+		mouse.x / canvas.width * 3.,
+		((mouse.x - mouse.y) / (canvas.width + canvas.height) * 1.) // a little flair
+	];
+
+	let idle = [
+		time * .3 + .85,
+		time * .2 - 1.2,
+		time * .01 + .5
+	];
+
+	idle[0] += mousemotion[0]; 
+	idle[1] += mousemotion[1]; 
+	idle[2] += mousemotion[2]; 
 
 	let t = rectstates[rectstates.length - 1].t;
 	rot = [
-		mix(rot[0], time * .3 + .85, t),
-		mix(rot[1], time * .2 - 1.2, t),
-		mix(rot[2], time * .01 + .5, t)
+		lerpAngle(rot[0], idle[0], t),
+		lerpAngle(rot[1], idle[1], t),
+		lerpAngle(rot[2], idle[2], t)
 	];
 
 	let size = allrects[allrects.length - 1].size[0];
