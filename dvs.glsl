@@ -12,7 +12,7 @@ uniform sampler2D iChannel0; // Previous Buffer A frame
 uniform float u_Rects[12]; // size xy, rotation theta * rects
 uniform float u_Cube[3 + 3 + 1 + 1]; // pos + rot + size + perspective
 
-// #define PREVIEW
+#define PREVIEW
 
 out vec4 fragColor;
 #define PI 3.14156
@@ -87,21 +87,6 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     // mouse cursor
     vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : bg; 
     
-    // rectangles
-    for (int i = 0; i < u_Rects.length() / 6; i++) {
-        vec2 uv;
-        float rect = sdRotatedRect(
-            fragCoord,
-            vec2(rinf(i, 1), rinf(i, 2)),
-            vec2(rinf(i, 3), rinf(i, 4)),
-            rinf(i, 5),
-            uv
-        );
-        float cscale = .03;
-        float checker = float(mod(floor(uv.x * rinf(i, 3) * cscale) + floor(uv.y * rinf(i, 4) * cscale), 2.) < 1.) + .2;
-        col += rect < 0. ? vec3(checker) : vec3(0);
-    }
-
     // basic ass cube edge ray march
     vec2 uv = (2.0 * fragCoord - iResolution.xy)
             / min(iResolution.x, iResolution.y);

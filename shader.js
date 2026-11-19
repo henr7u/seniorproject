@@ -29,7 +29,7 @@ async function main() {
 
 	const [vertexSource, bufferSource, imageSource] = await Promise.all([
 		loadShader('./vert.glsl'),
-		loadShader('./dvs.glsl'),
+		loadShader('./base.glsl'),
 		loadShader('./frag.glsl')
 	]);
 
