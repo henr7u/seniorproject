@@ -115,9 +115,9 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     vec3 pt = ro;
     for (int i = 0; i < 100; i++) {
         pt = ro + rd * t;
-        pt.xz = rot(u_Cube[3]) * pt.xz;
-        pt.yz = rot(u_Cube[4]) * pt.yz;
-        pt.yz = rot(u_Cube[5]) * pt.yz;
+        pt.yz = rot(u_Cube[3]) * pt.yz; // i hope this is how it works
+        pt.xz = rot(u_Cube[4]) * pt.xz;
+        pt.xy = rot(u_Cube[5]) * pt.xy;
 
         float d = sdBox(pt, vec3(u_Cube[6]));
 

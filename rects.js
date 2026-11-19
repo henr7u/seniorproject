@@ -23,19 +23,11 @@ function sdRotatedRect(p, center, size, angle) {
 	return dist;
 }
 
-function rect(index, p, size) {
-	let t = time + index * 1000; // could hash, too lazy. crude hack works
 
-	let center = [
-		p[0] + 20 * perlin(t + 1234),
-		p[1] + 20 * perlin(t - 1234)];
-
-	let angle = .15 * perlin(1.5 * t);
-
-	// check hover
+function checkHover(index, center, size, angle) {
 	let cur = rectstates[index];
 	let hovered = sdRotatedRect([mouse.x, mouse.y], center, size, angle) < 0;
-	let hovert = mix(cur.t, hovered * 1, .2);
+	let hovert = mix(cur.t, hovered * 1, allrects[index].tcoef);
 	let start = cur.start;
 	if (hovered != cur.is)
 		start = time;
@@ -46,6 +38,20 @@ function rect(index, p, size) {
 		start: start, // start of either hover or dehover
 		corner: cur.corner
 	};
+}
+
+function rect(index, p, size) {
+	let t = time + index * 1000; // could hash, too lazy. crude hack works
+
+	let center = [
+		p[0] + 20 * perlin(t + 1234),
+		p[1] + 20 * perlin(t - 1234)];
+
+	let angle = .15 * perlin(1.5 * t);
+
+	// check hover
+	checkHover(index, center, size, angle);
+	let hovert = rectstates[index].t;
 
 	// update visual with hover data
 	center = [
@@ -66,17 +72,32 @@ function rect(index, p, size) {
 	]
 }
 
+
 function updatecube() {
 	let rot = [
-		time * 1.7 + .85,
-		time * 2.4 - 1.2,
-		0
+		time * .9 + .85,
+		time * 1.2 - 1.2,
+		time * .05 + .5
 	];
+
+	const TAU = 2 * Math.PI;
+	const mod = x => ((x % TAU) + TAU) % TAU;
+	rot = [mod(rot[0]), mod(rot[1]), mod(rot[2])];
+
+	let t = rectstates[rectstates.length - 1].t;
+	rot = [
+		mix(rot[0], time * .3 + .85, t),
+		mix(rot[1], time * .2 - 1.2, t),
+		mix(rot[2], time * .01 + .5, t)
+	];
+
+	let size = allrects[allrects.length - 1].size[0];
+	size = mix(size, size + .1, t);
 
 	cubedata = [
 		allrects[allrects.length - 1].pos,
 		rot,
-		allrects[allrects.length - 1].size
+		[size, allrects[allrects.length - 1].size[1]]
 	];
 }
 
@@ -95,8 +116,8 @@ function cuberect() {
 
 	let pos = cubedata[0];
 	let rot = cubedata[1];
-	let size = cubedata[2];
-	let focalLength = allrects[allrects.length - 1].size[1];
+	let size = cubedata[2][0];
+	let focalLength = cubedata[2][1];
 
 	let minX = Infinity; let minY = Infinity;
 	let maxX = -Infinity; let maxY = -Infinity;
@@ -109,18 +130,18 @@ function cuberect() {
 				let z = sz * size;
 
 				// Inverse of the third rotation (YZ)
-				[y, z] = rotate(y, z, -rot.yz2);
+				[x, y] = rotate(x, y, -rot[2]);
 
 				// Inverse of the second rotation (YZ)
-				[y, z] = rotate(y, z, -rot.yz1);
+				[x, z] = rotate(x, z, -rot[1]);
 
 				// Inverse of the first rotation (XZ)
-				[x, z] = rotate(x, z, -rot.xz);
+				[y, z] = rotate(y, z, -rot[0]);
 
 				// World position relative to ray origin
-				x -= pos.x;
-				y -= pos.y;
-				z -= pos.z;
+				x -= pos[0];
+				y -= pos[1];
+				z -= pos[2];
 
 				// Perspective projection:
 				// rd = normalize(vec3(uv, focalLength))
@@ -140,7 +161,7 @@ function cuberect() {
 	}
 
 	return [
-		allrects.length,
+		allrects.length - 1,
 		(minX + maxX) / 2, (minY + maxY) / 2,
 		maxX - minX, maxY - minY,
 		0
@@ -156,7 +177,10 @@ function updaterects(timestamp) {
 		rects.push(rect(i, allrects[i].pos, allrects[i].size))
 
 	updatecube();
-	rects.push(cuberect());
+	let cr = cuberect();
+	rects.push(cr);
+	
+	checkHover(allrects.length - 1, [cr[1], cr[2]], [cr[3], cr[4]], 0);
 
 	rectdata = rects;
 

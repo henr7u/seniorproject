@@ -7,6 +7,7 @@ const allrects = [
 		desc: 'testing description',
 		pos: [300, 400],
 		size: [200, 100],
+		tcoef: .2,
 		color: '#ffff00',
 		content: 'something?'
 	},
@@ -15,6 +16,7 @@ const allrects = [
 		desc: 'testing description',
 		pos: [600, 400],
 		size: [200, 100],
+		tcoef: .2,
 		color: '#00ff00',
 		content: 'something?'
 	},
@@ -23,6 +25,7 @@ const allrects = [
 		desc: 'testing description',
 		pos: [-2, 0, 6], // camera position
 		size: [.65, -2.5], // size of cube and then the perspective coef
+		tcoef: .1,
 		color: '#ff0000',
 		content: 'something?'
 	}
@@ -31,7 +34,8 @@ const allrects = [
 const baselinecornerwidth = 15;
 
 var rectdata = [];
-var cubedata = []; // position, rotation, size, perspective coef 
+var cubedata = [allrects[allrects.length - 1].pos, [0,0,0], allrects[allrects.length - 1].size[0]];
+// position, rotation, size, perspective coef 
 
 var rectstates = Array(allrects.length).fill(
 	{ is: false, t: 0, start: -1, corner: baselinecornerwidth }

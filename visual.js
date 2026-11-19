@@ -134,7 +134,9 @@ function sampleOFFanim(data, state, t) {
 
 function updaterect(i, r, data, state) {
 	// scale
-	const bounds = rotatedBounds([data[1], data[2]], [data[3], data[4]], data[5])
+	const bounds = rotatedBounds([data[1], data[2]], [data[3], data[4]], data[5]);
+
+	// console.log(i)
 
 	syncElement(canvas, r, bounds.leftbottom[0], bounds.leftbottom[1], bounds.size[0], bounds.size[1]);
 
@@ -145,7 +147,7 @@ function updaterect(i, r, data, state) {
 }
 
 function updatedrawer() {
-	for (let i = 0; i < rects.length - 1; i++)
+	for (let i = 0; i < rects.length; i++)
 		updaterect(i, rects[i], rectdata[i], rectstates[i]);
 
 	requestAnimationFrame(updatedrawer);
