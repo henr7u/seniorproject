@@ -9,8 +9,8 @@ uniform int iFrame;
 uniform vec4 iMouse;
 uniform vec4 iMousePrev;
 uniform sampler2D iChannel0; // Previous Buffer A frame
-uniform float u_Rects[12]; // size xy, rotation theta * rects
-uniform float u_Cube[3 + 3 + 1 + 1]; // pos + rot + size + perspective
+uniform sampler2D iChannel1; // source material
+uniform int u_downscale;
 
 #define PREVIEW
 
@@ -18,7 +18,6 @@ out vec4 fragColor;
 #define PI 3.14156
 #define ln10 2.30258509
 
-#define downscale 5.
 const float contrastThreshold = .1;
     
 const int runSeed = 1;
@@ -43,21 +42,6 @@ const bool addPhotoAndShotNoise = true;
 const float photoNoiseTargetBa = .1;
 const float photoNoiseCutoffHz = 10.;
 
-float sdRotatedRect(vec2 p, vec2 center, vec2 size, float angle, out vec2 uv) {
-    vec2 q = p - center;
-
-    float c = cos(angle);
-    float s = sin(angle);
-
-    q = mat2(c, -s, s, c) * q;
-
-    uv = q / size + 0.5;
-
-    vec2 d = abs(q) - size * 0.5;
-
-    return length(max(d, 0.0)) + min(max(d.x, d.y), 0.0);
-}
-   
 float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r ) {
     vec2 ba = b-a;
     vec2 pa = p-a;
@@ -65,73 +49,58 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r ) {
     return length(pa-h*ba)-r;
 }
 
-// rect info at a specific index
-float rinf(int i, int off) {
-    return u_Rects[i * 6 + off];
-}
+vec2 getDeltas(sampler2D buf, vec2 uv) {
+    vec2 pixel = vec2(1. / iResolution.xy);
+    vec3 pole = vec3(-1, 0, +1);
+    float dpos = 0.0;
+    float dnor = 0.0;
 
-mat2 rot(float a) {
-    float c = cos(a), s = sin(a);
-    return mat2(c, -s, s, c);
-}
+    vec4 s0 = texture(buf, uv + pixel.xy * pole.xx); // x1, y1
+    vec4 s1 = texture(buf, uv + pixel.xy * pole.yx); // x2, y1
+    vec4 s2 = texture(buf, uv + pixel.xy * pole.zx); // x3, y1
+    vec4 s3 = texture(buf, uv + pixel.xy * pole.xy); // x1, y2
+    vec4 s4 = texture(buf, uv + pixel.xy * pole.yy); // x2, y2
+    vec4 s5 = texture(buf, uv + pixel.xy * pole.zy); // x3, y2
+    vec4 s6 = texture(buf, uv + pixel.xy * pole.xz); // x1, y3
+    vec4 s7 = texture(buf, uv + pixel.xy * pole.yz); // x2, y3
+    vec4 s8 = texture(buf, uv + pixel.xy * pole.zz); // x3, y3
 
-float sdBox(vec3 p, vec3 b) {
-    vec3 q = abs(p) - b;
-    return length(max(q, 0.0))
-         + min(max(q.x, max(q.y, q.z)), 0.0);
+    dpos = (
+        abs(s1.a - s7.a) +
+        abs(s5.a - s3.a) +
+        abs(s0.a - s8.a) +
+        abs(s2.a - s6.a)
+    ) * 0.5;
+    dpos += (
+        max(0.0, 1.0 - dot(s1.rgb, s7.rgb)) +
+        max(0.0, 1.0 - dot(s5.rgb, s3.rgb)) +
+        max(0.0, 1.0 - dot(s0.rgb, s8.rgb)) +
+        max(0.0, 1.0 - dot(s2.rgb, s6.rgb))
+    );
+
+    // dpos = pow(max(dpos - 0.5, 0.0), 5.0);
+    dpos = step(.8, dpos);
+
+    return vec2(dpos, dnor);
 }
 
 void image( out vec4 fragColor, in vec2 fragCoord,
     in vec3 iResolution) {
     vec3 bg = vec3(0);
     // mouse cursor
-    vec3 col = sdSegment(fragCoord, iMouse.xy, iMousePrev.xy, 30.) < 0. ? vec3(1) : bg; 
+    vec3 col = sdSegment(fragCoord * float(u_downscale), iMouse.xy* float(u_downscale), iMousePrev.xy* float(u_downscale), 30.) < 0. ? vec3(1) : bg; 
     
-    // basic ass cube edge ray march
-    vec2 uv = (2.0 * fragCoord - iResolution.xy)
-            / min(iResolution.x, iResolution.y);
+    vec2 uv = fragCoord.xy / iResolution.xy;
+    vec2 deltas = getDeltas(iChannel1, uv);
 
-    vec3 ro = vec3(u_Cube[0], u_Cube[1], u_Cube[2]);
-    vec3 rd = normalize(vec3(uv, u_Cube[7]));
-
-    float t = 0.0;
-    bool hit = false;
-
-    vec3 pt = ro;
-    for (int i = 0; i < 100; i++) {
-        pt = ro + rd * t;
-        pt.yz = rot(u_Cube[3]) * pt.yz; // i hope this is how it works
-        pt.xz = rot(u_Cube[4]) * pt.xz;
-        pt.xy = rot(u_Cube[5]) * pt.xy;
-
-        float d = sdBox(pt, vec3(u_Cube[6]));
-
-        if (d < 0.0007) {
-            hit = true;
-            break;
-        }
-
-        t += max(d, 0.0005);
-        if (t > 12.0) break;
-    }
-
-    if (hit) {
-        vec3 d = abs(abs(pt) - vec3(u_Cube[6]));
-
-        float edge = min(
-            length(d.xy),
-            min(length(d.xz), length(d.yz))
-        );
-        float thickness = 0.04;
-
-        float line = 1.0 - step(thickness, edge);
-
-        col += vec3(line);
-    }
+    // col = vec3(1);
+    col += deltas.x - deltas.y;
     
-    fragColor = vec4( col, 1.0 );
+    fragColor = vec4(col, 1);
+    // fragColor = vec4(abs(texture(iChannel1, uv)));
 }
 
+// DVSIM START
 
 // https://www.pcg-random.org/
 uvec4 pcg4d(inout uvec4 v) {
@@ -286,14 +255,12 @@ vec4 state(vec4 col, vec4 state,
 }
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-    vec2 coord = floor(fragCoord / downscale) * downscale;
-    
     vec4 col;
-    image(col, coord, iResolution);
+    image(col, fragCoord, iResolution);
     
     vec4 cur = texture(iChannel0, fragCoord / iResolution.xy);
     
-    fragColor = state(col, cur, coord, iFrame, iFrame == 0);
+    fragColor = state(col, cur, fragCoord, iFrame, iFrame == 0);
     
 #ifdef PREVIEW
     fragColor = col;

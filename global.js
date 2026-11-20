@@ -24,7 +24,7 @@ const allrects = [
 		title: 'Henry Yu\'s Senior Project Porfolio',
 		desc: 'Welcome to my project portfolio! Click here to learn about my senior project!',
 		pos: [-2, 0, 6], // camera position
-		size: [.65, -2.5], // size of cube and then the perspective coef
+		size: [.65, 2], // size of cube and then the perspective coef
 		tcoef: .05,
 		color: '#ff0000',
 		content: 'Over the 2026 summer, I worked with a few grad students from the University of Maryland\'s Perception and Robotics Group to make a large event camera dataset for their machine learning research. Learn more about event cameras in the "What is this?" section. I built a simulator for these cameras directly into rendering process of the Unity game engine, allowing for significantly better performance and quality compared to alternative simulators that use preprocessed videos as inputs. The simulator, aptly named "DVSim" from the real sensor\'s alternative name "Dynamic Vision Sensor", was made mostly for the specific project of the grad students, but was programmed in such a way that it can easily be extended to general event-vision data generation purposes. Being a digital program, my simulator can make lots of synthetic event data that would otherwise be costly to capture in the real world, all without human input past the initial scene setup process. '
@@ -32,6 +32,8 @@ const allrects = [
 ]
 
 const baselinecornerwidth = 15;
+const perspective = 2;
+const CANVASDOWNSCALE = 5;
 
 var rectdata = [];
 var cubedata = [allrects[allrects.length - 1].pos, [0,0,0], allrects[allrects.length - 1].size[0]];

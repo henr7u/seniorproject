@@ -8,110 +8,11 @@ uniform float iFrameRate;
 uniform int iFrame;
 uniform vec4 iMouse;
 uniform vec4 iMousePrev;
-uniform float perspective;
-uniform float objectData[10 * 4]; // object type + pos + rot + size * object count
+uniform float u_downscale;
+uniform float u_perspective;
+uniform float u_objectData[10 * 5]; // object type + pos + rot + size/shape * object count
 out vec4 fragColor;
 
-float sdBox( vec3 p, vec3 b ) {
-  vec3 d = abs(p) - b;
-  return min(max(d.x,max(d.y,d.z)),0.0) +
-         length(max(d,0.0));
-}
-
-vec2 mirror(vec2 p, float v) {
-  float hv = v * 0.5;
-  vec2  fl = mod(floor(p / v + 0.5), 2.0) * 2.0 - 1.0;
-  vec2  mp = mod(p + hv, v) - hv;
-    
-  return fl * mp;
-}
-
-vec2 rotate2D(vec2 p, float a) {
-  return p * mat2(cos(a), -sin(a), sin(a),  cos(a));
-}
-
-float map(vec3 p) {
-  float r = iMouse.z > 0.0 ? iMouse.x / 100.0 : iTime * 0.9;
-  p.xz = mirror(p.xz, 4.);
-  p.xz = rotate2D(p.xz, r);
-  float d = sdBox(p, vec3(1));
-  d = min(d, sdBox(p, vec3(0.1, 0.1, 3)));
-  d = min(d, sdBox(p, vec3(3, 0.1, 0.1)));
-  return d;
-}
-
-mat3 calcLookAtMatrix(vec3 origin, vec3 target, float roll) {
-  vec3 rr = vec3(sin(roll), cos(roll), 0.0);
-  vec3 ww = normalize(target - origin);
-  vec3 uu = normalize(cross(ww, rr));
-  vec3 vv = normalize(cross(uu, ww));
-
-  return mat3(uu, vv, ww);
-}
-
-vec3 getRay(vec3 origin, vec3 target, vec2 screenPos, float lensLength) {
-  mat3 camMat = calcLookAtMatrix(origin, target, 0.0);
-  return normalize(camMat * vec3(screenPos, lensLength));
-}
-
-float calcRayIntersection(vec3 rayOrigin, vec3 rayDir, float maxd, float precis) {
-  float latest = precis * 2.0;
-  float dist   = +0.0;
-  float type   = -1.0;
-  float res    = -1.0;
-
-  for (int i = 0; i < 30; i++) {
-    if (latest < precis || dist > maxd) break;
-
-    float result = map(rayOrigin + rayDir * dist);
-
-    latest = result;
-    dist  += latest;
-  }
-
-  if (dist < maxd) {
-    res = dist;
-  }
-
-  return res;
-}
-
-vec2 squareFrame(vec2 screenSize, vec2 coord) {
-  vec2 position = 2.0 * (coord.xy / screenSize.xy) - 1.0;
-  position.x *= screenSize.x / screenSize.y;
-  return position;
-}
-
-vec3 calcNormal(vec3 pos, float eps) {
-  const vec3 v1 = vec3( 1.0,-1.0,-1.0);
-  const vec3 v2 = vec3(-1.0,-1.0, 1.0);
-  const vec3 v3 = vec3(-1.0, 1.0,-1.0);
-  const vec3 v4 = vec3( 1.0, 1.0, 1.0);
-
-  return normalize( v1 * map( pos + v1*eps ) +
-                    v2 * map( pos + v2*eps ) +
-                    v3 * map( pos + v3*eps ) +
-                    v4 * map( pos + v4*eps ) );
-}
-
-vec3 calcNormal(vec3 pos) {
-  return calcNormal(pos, 0.002);
-}
-
-void mainImage(out vec4 fragColor, in vec2 fragCoord) {
-  vec2 uv = squareFrame(iResolution.xy, fragCoord.xy);
-  vec3 ro = vec3(sin(iTime * 0.2), 1.5, cos(iTime * 0.2)) * 5.;
-  vec3 ta = vec3(0, 0, 0);
-  vec3 rd = getRay(ro, ta, uv, 2.0);
-    
-  float t = calcRayIntersection(ro, rd, 20.0, 0.001);
-  vec3 pos = ro + rd * t;
-  vec3 nor = calcNormal(pos);
-    
-  fragColor = vec4(rd, t);
-}
-
-/*
 // obj 0 
 float sdBox( vec3 p, vec3 b ) {
   vec3 d = abs(p) - b;
@@ -149,7 +50,7 @@ float sdOctahedron( vec3 p, float s )
 }
 
 // obj 4 
-float icosahedron(vec3 position, float radius) {
+float sdIcosahedron(vec3 position, float radius) {
     position = abs(position);
     float phi = (1.0 + sqrt(5.0)) * 0.5;
     float s = radius / sqrt(phi + 2.0);
@@ -170,10 +71,38 @@ float icosahedron(vec3 position, float radius) {
     return h < 0.0 ? -d : d;
 }
 
+// inverse rotation
+vec3 iRot(vec3 p, vec3 angles) {
+    vec3 c = cos(angles);
+    vec3 s = sin(angles);
+    p.xy = mat2(c.z, -s.z, s.z, c.z) * p.xy; // Inverse Z
+    p.xz = mat2(c.y, s.y, -s.y, c.y) * p.xz; // Inverse Y
+    p.yz = mat2(c.x, -s.x, s.x, c.x) * p.yz; // Inverse X
+    return p;
+}
+
+// read object data
+float rod(int i, int off) {
+    return u_objectData[i * 10 + off];
+}
+
 float map(vec3 p) {
     float d = 10000.;
-    d = min(d, sdBox(p - vec3(0, 0, -6), vec3(.65)));
-    return sdBox(p - vec3(0, 0, 6), vec3(.65));
+    for (int i = 0; i < u_objectData.length() / 10; i++) {
+        vec3 dp = iRot(p - vec3(rod(i, 1), rod(i, 2), rod(i, 3)), 
+                    vec3(rod(i, 4), rod(i, 5), rod(i, 6)))  ;
+
+        switch (int(rod(i, 0))) {
+            case 0: d = min(d, sdBox(dp, vec3(rod(i, 7), rod(i, 8), rod(i, 9)))); break;
+            case 1: d = min(d, sdTorus(dp, vec2(rod(i, 7), rod(i, 8)))); break;
+            case 2: d = min(d, sdCappedCylinder(dp, rod(i, 7), rod(i, 8))); break;
+            case 3: d = min(d, sdOctahedron(dp, rod(i, 7))); break;
+            case 4: d = min(d, sdIcosahedron(dp, rod(i, 7))); break;
+        }
+    }
+    d = min(d, sdBox(iRot(p - vec3(2, 0, 6), vec3(iTime, iTime / 2., 0)), vec3(.65)));
+    d = min(d, sdIcosahedron(p - vec3(-2, 0, 6), 1.));
+    d = min(d, sdOctahedron(p - vec3(0, 2, 6), 1.));
     return d;
 }
 
@@ -190,12 +119,18 @@ vec3 calcNormal(vec3 pos, float eps) {
                     v4 * map( pos + v4*eps ) );
 }
 
+vec2 squareFrame(vec2 screenSize, vec2 coord) {
+  vec2 position = 2.0 * (coord.xy / screenSize.xy) - 1.0;
+  position.x *= screenSize.x / screenSize.y;
+  return position;
+}
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     vec2 uv = (2.0 * fragCoord - iResolution.xy)
             / min(iResolution.x, iResolution.y);
 
     vec3 ro = vec3(0, 0, 0);
-    vec3 rd = normalize(vec3(uv, perspective));
+    vec3 rd = normalize(vec3(uv, u_perspective));
 
     // basic shit 
     float t = 0.0;
@@ -215,9 +150,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         t += max(d, 0.0005);
     }
 
-    fragColor = vec4(rd, 1);
+    if (!hit) t = -1.;
+
+    vec3 nor = calcNormal(ro + rd * t, .002);
+
+    fragColor = vec4(nor, t);
 }
-*/
 
 void main() {
     mainImage(fragColor, gl_FragCoord.xy);
