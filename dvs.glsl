@@ -12,7 +12,7 @@ uniform sampler2D iChannel0; // Previous Buffer A frame
 uniform sampler2D iChannel1; // source material
 uniform int u_downscale;
 
-#define PREVIEW
+// #define PREVIEW
 
 out vec4 fragColor;
 #define PI 3.14156
@@ -98,6 +98,7 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     
     fragColor = vec4(col, 1);
     // fragColor = vec4(abs(texture(iChannel1, uv)));
+    // fragColor = vec4(texture(iChannel1, uv).xyz, 1);
 }
 
 // DVSIM START

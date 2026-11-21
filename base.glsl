@@ -9,8 +9,8 @@ uniform int iFrame;
 uniform vec4 iMouse;
 uniform vec4 iMousePrev;
 uniform float u_downscale;
-uniform float u_perspective;
-uniform float u_objectData[10 * 5]; // object type + pos + rot + size/shape * object count
+uniform float u_focalLength;
+uniform float u_objectData[10 * 3]; // object type + pos + rot + size/shape * object count
 out vec4 fragColor;
 
 // obj 0 
@@ -89,8 +89,9 @@ float rod(int i, int off) {
 float map(vec3 p) {
     float d = 10000.;
     for (int i = 0; i < u_objectData.length() / 10; i++) {
-        vec3 dp = iRot(p - vec3(rod(i, 1), rod(i, 2), rod(i, 3)), 
-                    vec3(rod(i, 4), rod(i, 5), rod(i, 6)))  ;
+        vec3 dp = iRot(
+            p - vec3(rod(i, 1), rod(i, 2), rod(i, 3)), 
+            vec3(rod(i, 4), rod(i, 5), rod(i, 6)));
 
         switch (int(rod(i, 0))) {
             case 0: d = min(d, sdBox(dp, vec3(rod(i, 7), rod(i, 8), rod(i, 9)))); break;
@@ -100,37 +101,30 @@ float map(vec3 p) {
             case 4: d = min(d, sdIcosahedron(dp, rod(i, 7))); break;
         }
     }
-    d = min(d, sdBox(iRot(p - vec3(2, 0, 6), vec3(iTime, iTime / 2., 0)), vec3(.65)));
-    d = min(d, sdIcosahedron(p - vec3(-2, 0, 6), 1.));
-    d = min(d, sdOctahedron(p - vec3(0, 2, 6), 1.));
+    // d = min(d, sdBox(iRot(p - vec3(2, 0, 6), vec3(iTime, iTime / 2., 0)), vec3(.65)));
+    // d = min(d, sdIcosahedron(p - vec3(-2, 0, 6), 1.));
+    // d = min(d, sdOctahedron(p - vec3(0, 2, 6), 1.));
     return d;
 }
 
 // https://www.shadertoy.com/view/4dVGRW
 vec3 calcNormal(vec3 pos, float eps) {
-  const vec3 v1 = vec3( 1,-1,-1);
-  const vec3 v2 = vec3(-1,-1, 1);
-  const vec3 v3 = vec3(-1, 1,-1);
-  const vec3 v4 = vec3( 1, 1, 1);
+    const vec3 v1 = vec3(1, -1, -1);
+    const vec3 v2 = vec3(-1, -1, 1);
+    const vec3 v3 = vec3(-1, 1, -1);
+    const vec3 v4 = vec3(1, 1, 1);
 
-  return normalize( v1 * map( pos + v1*eps ) +
-                    v2 * map( pos + v2*eps ) +
-                    v3 * map( pos + v3*eps ) +
-                    v4 * map( pos + v4*eps ) );
+    return normalize(v1 * map(pos + v1 * eps) +
+        v2 * map(pos + v2 * eps) +
+        v3 * map(pos + v3 * eps) +
+        v4 * map(pos + v4 * eps));
 }
 
-vec2 squareFrame(vec2 screenSize, vec2 coord) {
-  vec2 position = 2.0 * (coord.xy / screenSize.xy) - 1.0;
-  position.x *= screenSize.x / screenSize.y;
-  return position;
-}
-
-void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
-    vec2 uv = (2.0 * fragCoord - iResolution.xy)
-            / min(iResolution.x, iResolution.y);
+void mainImage(out vec4 fragColor, in vec2 fragCoord) {
+    vec2 uv = (2.0 * fragCoord - iResolution.xy) / min(iResolution.x, iResolution.y);
 
     vec3 ro = vec3(0, 0, 0);
-    vec3 rd = normalize(vec3(uv, u_perspective));
+    vec3 rd = normalize(vec3(uv, u_focalLength));
 
     // basic shit 
     float t = 0.0;
@@ -150,9 +144,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
         t += max(d, 0.0005);
     }
 
-    if (!hit) t = -1.;
-
     vec3 nor = calcNormal(ro + rd * t, .002);
+    if (!hit) {
+        t = -1.;
+        nor = vec3(0);
+    }
 
     fragColor = vec4(nor, t);
 }

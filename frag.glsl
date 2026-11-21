@@ -13,7 +13,7 @@ uniform sampler2D iChannel0; // Current Buffer A output
 
 out vec4 fragColor;
 
-#define PREVIEW
+// #define PREVIEW
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
