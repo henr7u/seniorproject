@@ -19,7 +19,7 @@ var objects = [
 		title: 'Product',
 		desc: 'What did I make? Click to learn more!',
 		object: 0,
-		pos: [2, 0, 6],
+		pos: [3, 1, 6],
 		rot: [0, 0, 0],
 		spin: [.9, 1.2, .05, .85, -1.2, .5], // rate + offset
 		idle: [.3, .2, .02, .1, -.2, .2], // rate + offset
@@ -30,9 +30,9 @@ var objects = [
 	},
 	{
 		title: 'What is this?',
-		desc: 'This website looks very strange. What is this? Click here to find out!',
+		desc: 'Why does my website look like this? Click here to find out!',
 		object: 1,
-		pos: [0, -2, 10],
+		pos: [0, 2, 10],
 		rot: [0, 0, 0],
 		spin: [.9, 1.2, .05, .85, -1.2, .5], // rate + offset
 		idle: [.3, .2, .02, .1, -.2, .2], // rate + offset
@@ -49,7 +49,8 @@ const CANVASDOWNSCALE = 5;
 
 // temporary state storage for the on screen rectangles
 var rects = Array.from({ length: objects.length}, () => (
-	{ element: null, pos: [0, 0], size: [0, 0], is: false, t: 0, start: -1, corner: baselinecornerwidth }
+	{ element: null, desc: null, pos: [0, 0], size: [0, 0], is: false, t: 0, start: -1,
+		 corner: baselinecornerwidth, line: 0, chars: 0 }
 ));
 
 const canvas = document.getElementById('canvas');

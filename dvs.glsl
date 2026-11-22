@@ -13,6 +13,7 @@ uniform sampler2D iChannel1; // source material
 uniform int u_downscale;
 
 // #define PREVIEW
+// #define WHITE
 
 out vec4 fragColor;
 #define PI 3.14156
@@ -49,8 +50,13 @@ float sdSegment( in vec2 p, in vec2 a, in vec2 b, in float r ) {
     return length(pa-h*ba)-r;
 }
 
-vec2 getDeltas(sampler2D buf, vec2 uv) {
-    vec2 pixel = vec2(1. / iResolution.xy);
+float normalDelta(vec4 a, vec4 b) {
+    float valid = step(0.5, a.a) * step(0.5, b.a);
+    return valid * max(0.0, 1.0 - dot(a.rgb, b.rgb));
+}
+
+vec2 getDeltas(sampler2D buf, vec2 uv, float radius) {
+    vec2 pixel = radius / iResolution.xy;
     vec3 pole = vec3(-1, 0, +1);
     float dpos = 0.0;
     float dnor = 0.0;
@@ -71,15 +77,14 @@ vec2 getDeltas(sampler2D buf, vec2 uv) {
         abs(s0.a - s8.a) +
         abs(s2.a - s6.a)
     ) * 0.5;
-    dpos += (
-        max(0.0, 1.0 - dot(s1.rgb, s7.rgb)) +
-        max(0.0, 1.0 - dot(s5.rgb, s3.rgb)) +
-        max(0.0, 1.0 - dot(s0.rgb, s8.rgb)) +
-        max(0.0, 1.0 - dot(s2.rgb, s6.rgb))
-    );
+    dpos +=
+        normalDelta(s1, s7) +
+        normalDelta(s5, s3) +
+        normalDelta(s0, s8) +
+        normalDelta(s2, s6);
 
     // dpos = pow(max(dpos - 0.5, 0.0), 5.0);
-    dpos = step(.8, dpos);
+    dpos = step(.5, dpos);
 
     return vec2(dpos, dnor);
 }
@@ -88,15 +93,18 @@ void image( out vec4 fragColor, in vec2 fragCoord,
     in vec3 iResolution) {
     vec3 bg = vec3(0);
     // mouse cursor
-    vec3 col = sdSegment(fragCoord * float(u_downscale), iMouse.xy* float(u_downscale), iMousePrev.xy* float(u_downscale), 30.) < 0. ? vec3(1) : bg; 
+    vec3 col = sdSegment(fragCoord * float(u_downscale), iMouse.xy* float(u_downscale), iMousePrev.xy* float(u_downscale), 30.) < 0.
+     ? vec3(step(1., iMouse.z) + 1.) : bg;
+
     
     vec2 uv = fragCoord.xy / iResolution.xy;
-    vec2 deltas = getDeltas(iChannel1, uv);
+    vec2 deltas = getDeltas(iChannel1, uv, .5);
 
     // col = vec3(1);
     col += deltas.x - deltas.y;
     
     fragColor = vec4(col, 1);
+    // fragColor = vec4(deltas.y);
     // fragColor = vec4(abs(texture(iChannel1, uv)));
     // fragColor = vec4(texture(iChannel1, uv).xyz, 1);
 }
@@ -265,6 +273,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord ) {
     
 #ifdef PREVIEW
     fragColor = col;
+#endif
+
+#ifdef WHITE
+    fragColor = vec4(1.);
 #endif
 }
 

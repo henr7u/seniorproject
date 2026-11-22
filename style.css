@@ -30,7 +30,8 @@ canvas {
 .rect {
   position: absolute;
   --corner: 30px;
-  --t: 2px;
+  --thick: 2px;
+
   overflow: visible;
 }
 
@@ -40,9 +41,9 @@ canvas {
   inset: 0;
   pointer-events: none;
   
-  padding: var(--t);
-  outline: var(--t) solid var(--borcorcol);
-  outline-offset: calc(-1 * var(--t));
+  padding: var(--thick);
+  outline: var(--thick) solid var(--borcorcol);
+  outline-offset: calc(-1 * var(--thick));
 
   mask:
     conic-gradient(at var(--corner) var(--corner), #0000 75%, #000 0)
@@ -55,10 +56,36 @@ canvas {
 
 .recttitle {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 2px);
+  left: 5px;
   font-family: "Ubuntu Mono", monospace;
   color: var(--borcorcol);
   font-size: 20px;
 
   width: 500px;
+}
+
+.rectline {
+  position: absolute;
+  top: calc(100% + 30px);
+  left: 2px;
+  width: var(--line);
+  border-top: var(--thick) solid var(--borcorcol);
+}
+
+.rectdesc {
+  position: absolute;
+  top: calc(100% + 2px + 30px);
+  left: 0px;
+  text-indent: 10px;
+  font-family: "Ubuntu Mono", monospace;
+  color: var(--borcorcol);
+  font-size: 20px;
+
+  width: 250px;
+
+  /* text-shadow: 0 0 5px black; */
+  /* box-shadow: 0 0 3px black; */
+  background: black;
+  z-index: 2;
 }
