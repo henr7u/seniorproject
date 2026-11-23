@@ -1,4 +1,4 @@
-const rectexpansion = 5;
+const rectexpansion = 50;
 const smoothing = .3;
 
 function sdBox(p, center, size) {
@@ -371,8 +371,8 @@ function updateVisual(t) {
 		let currect = rects[i];
 
 		let rect = calculateRect(obj);
-		rect.size[0] += rectexpansion;
-		rect.size[1] += rectexpansion;
+		rect.size[0] += rectexpansion / CANVASDOWNSCALE;
+		rect.size[1] += rectexpansion / CANVASDOWNSCALE;
 
 		rect.center = [
 			mix(currect.pos[0], rect.center[0], smoothing),

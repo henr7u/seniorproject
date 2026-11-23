@@ -45,7 +45,7 @@ var objects = [
 
 const baselinecornerwidth = 15;
 const FOCALLENGTH = 2;
-const CANVASDOWNSCALE = 5;
+const CANVASDOWNSCALE = 4;
 
 // temporary state storage for the on screen rectangles
 var rects = Array.from({ length: objects.length}, () => (
