@@ -4,10 +4,28 @@ function lerpAngle(a, b, t) {
   return ((a + delta * t) % TAU + TAU) % TAU;
 }
 
-function updateobjects(timestamp) {
+function updateObjects(timestamp) {
 	let time = timestamp * .001;
 
 	for (let i = 0; i < objects.length; i++) {
+		let curpos = objects[i].pos;
+		let target;
+		const origin = objects[i].origin;
+		if (selected == -1) target = origin;
+		else if (selected == i) target = objects[i].select;
+		else target = [
+			origin[0] + offscreenoffset[0],
+			origin[1] + offscreenoffset[1],
+			origin[2] + offscreenoffset[2],
+		];
+			
+		const posSmooth = .04;
+		let pos = [
+			mix(curpos[0], target[0], posSmooth),
+			mix(curpos[1], target[1], posSmooth),
+			mix(curpos[2], target[2], posSmooth)
+		];
+
 		let spin = objects[i].spin;
 		let rot = [
 			time * spin[0] + spin[3],
@@ -35,10 +53,27 @@ function updateobjects(timestamp) {
 			lerpAngle(rot[2], idle[2], t)
 		];
 
+		objects[i].pos = pos;
 		objects[i].rot = rot;
 	}
 
-	requestAnimationFrame(updateobjects);
+	requestAnimationFrame(updateObjects);
 }
 
-requestAnimationFrame(updateobjects);
+requestAnimationFrame(updateObjects);
+
+var selected = -1;
+
+function checkClickObjects(e) {
+	for (let o = 0; o < objects.length; o++) {
+		let obj = objects[o];
+		let rect = rects[o];
+
+		if (rect.is) {
+			selected = selected == o ? -1 : o;
+			rect.selected = selected == o;
+		}
+	}
+}
+
+canvas.addEventListener('click', checkClickObjects)

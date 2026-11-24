@@ -408,6 +408,8 @@ async function main() {
 	}
 
 	requestAnimationFrame(render);
+
+	loaded = true;
 }
 
 main().catch(console.error);

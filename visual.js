@@ -64,7 +64,7 @@ function arbitrarysmoothstep(x, sx, sy, sc, ex, ey, ec) {
 }
 
 function sampleCorners(rect, t) {
-	if (!rect.is) {
+	if (!(rect.is || rect.selected)) {
 		return mix(rect.corner, baselinecornerwidth, .13);
 	}
 
@@ -91,7 +91,7 @@ function sampleCorners(rect, t) {
 }
 
 function sampleLine(rect, t) {
-	if (!rect.is) {
+	if (!rect.is || rect.selected) {
 		if (t < .1) return rect.line - t * 5;
 		if (rect.line < 1) return 0;
 		return mix(rect.line, 0, .07);
@@ -116,7 +116,7 @@ function updateDesc(rect, obj, t) {
 	let dur = full.length / 200 + .8;
 
 	let chars;
-	if (!rect.is) {
+	if (!rect.is || rect.selected) {
 		chars = mix(rect.chars, 0, .2);
 		
 		if (t < .15) chars = rect.chars - t * 5; // start moving but not as quick
@@ -128,7 +128,7 @@ function updateDesc(rect, obj, t) {
 	let text = full.slice(0, chars);
 
 	const glitchsymbol = () => symbols[Math.floor(Math.random() * symbols.length)];
-	if (chars < full.length && t > wait && rect.is) {
+	if (chars < full.length && t > wait && rect.is && !rect.selected) {
 		let glitchcount = Math.ceil((full.length - chars) / 100) + 1;
 		for (let g = 0; g < glitchcount; g++) text += glitchsymbol();
 	}
@@ -374,17 +374,19 @@ function updateVisual(t) {
 		rect.size[0] += rectexpansion / CANVASDOWNSCALE;
 		rect.size[1] += rectexpansion / CANVASDOWNSCALE;
 
-		rect.center = [
-			mix(currect.pos[0], rect.center[0], smoothing),
-			mix(currect.pos[1], rect.center[1], smoothing),
-			mix(currect.pos[2], rect.center[2], smoothing)
-		];
+		if (loaded) {
+			rect.center = [
+				mix(currect.pos[0], rect.center[0], smoothing),
+				mix(currect.pos[1], rect.center[1], smoothing),
+				mix(currect.pos[2], rect.center[2], smoothing)
+			];
 
-		rect.size = [
-			mix(currect.size[0], rect.size[0], smoothing),
-			mix(currect.size[1], rect.size[1], smoothing),
-			mix(currect.size[2], rect.size[2], smoothing)
-		];
+			rect.size = [
+				mix(currect.size[0], rect.size[0], smoothing),
+				mix(currect.size[1], rect.size[1], smoothing),
+				mix(currect.size[2], rect.size[2], smoothing)
+			];
+		}
 
 		syncElement(canvas, currect.element,
 			rect.center[0] - rect.size[0] / 2, rect.center[1] - rect.size[1] / 2, rect.size[0], rect.size[1]);
@@ -393,17 +395,22 @@ function updateVisual(t) {
 		let hovert = mix(currect.t, hovered * 1, objects[i].tcoef);
 
 		let rt = time - currect.start;
+		let ht = time - currect.hoverstart;
 		let corner = sampleCorners(currect, rt);
 		currect.element.style.setProperty('--corner', corner + 'px');
 
-		let line = sampleLine(currect, rt);
+		let line = sampleLine(currect, ht);
 		currect.element.style.setProperty('--line', line + 'px');
 
-		let chars = updateDesc(currect, obj, rt);
+		let chars = updateDesc(currect, obj, ht);
 
 		let start = currect.start;
-		if (hovered != currect.is)
+		if ((hovered || currect.selected) != (currect.is || currect.selected))
 			start = time;
+
+		let hoverstart = currect.hoverstart;
+		if (hovered != currect.is)
+			hoverstart = time;
 
 		rects[i] = {
 			element: currect.element,
@@ -411,8 +418,10 @@ function updateVisual(t) {
 			pos: rect.center,
 			size: rect.size,
 			is: hovered,
+			selected: currect.selected,
 			t: hovert,
 			start: start,
+			hoverstart: hoverstart,
 			corner: corner,
 			line: line,
 			chars: chars

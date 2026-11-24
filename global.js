@@ -6,10 +6,12 @@ var objects = [
 		title: 'Henry Yu\'s Senior Project Porfolio',
 		desc: 'Welcome to my project portfolio! Click here to learn about my senior project!',
 		object: 4,
+		origin: [-4, 0, 6], 
+		select: [-4, 0, 8],
 		pos: [-4, 0, 6], 
 		rot: [0, 0, 0],
 		spin: [1.3, 1.2, .05, .85, -1.2, .5], // rate + offset
-		idle: [.3, .2, .02, .1, -.2, .2], // rate + offset
+		idle: [.2, -.1, .02, .5, .2, .7], // rate + offset
 		shape: [1],
 		tcoef: .05,
 		color: '#ff0000',
@@ -19,6 +21,8 @@ var objects = [
 		title: 'Product',
 		desc: 'What did I make? Click to learn more!',
 		object: 0,
+		origin: [3, 1, 6],
+		select: [-4, 0, 8],
 		pos: [3, 1, 6],
 		rot: [0, 0, 0],
 		spin: [.9, 1.2, .05, .85, -1.2, .5], // rate + offset
@@ -32,6 +36,8 @@ var objects = [
 		title: 'What is this?',
 		desc: 'Why does my website look like this? Click here to find out!',
 		object: 1,
+		origin: [0, 2, 10],
+		select: [-4, 0, 8],
 		pos: [0, 2, 10],
 		rot: [0, 0, 0],
 		spin: [.9, 1.2, .05, .85, -1.2, .5], // rate + offset
@@ -46,10 +52,13 @@ var objects = [
 const baselinecornerwidth = 15;
 const FOCALLENGTH = 2;
 const CANVASDOWNSCALE = 4;
+var loaded = false;
+const offscreenoffset = [0, -10, 0];
 
 // temporary state storage for the on screen rectangles
 var rects = Array.from({ length: objects.length}, () => (
-	{ element: null, desc: null, pos: [0, 0], size: [0, 0], is: false, t: 0, start: -1,
+	{ element: null, desc: null, pos: [0, 0], size: [0, 0],
+		 is: false, selected: false, t: 0, start: -1, hoverstart: -1,
 		 corner: baselinecornerwidth, line: 0, chars: 0 }
 ));
 
